@@ -1,0 +1,28 @@
+{
+  "name": "startupcheck-ai",
+  "private": true,
+  "version": "1.0.0",
+  "description": "StartUpCheck AI - Analyse de viabilite d'idees de business (client React + serveur Express + SQLite)",
+  "scripts": {
+    "setup": "npm install && npm run install:all && npm run db:push",
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "db:push": "npm --prefix server run db:push",
+    "dev": "concurrently -n SERVEUR,CLIENT -c cyan,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix client run typecheck",
+    "test": "npm --prefix server run test",
+    "seed": "npm --prefix server run seed",
+    "db:studio": "npm --prefix server run db:studio"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}

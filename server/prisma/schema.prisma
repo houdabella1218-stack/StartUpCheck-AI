@@ -1,0 +1,86 @@
+// StartUpCheck AI - schema de base de donnees (SQLite)
+// Documentation : https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Une analyse de viabilite enregistree.
+model Analysis {
+  id          String @id @default(cuid())
+  projectName String
+  description String
+  sector      String
+  sectorLabel String
+  market      String
+  marketLabel String
+  targetClients String
+  budget      Float
+  currency    String @default("MAD")
+
+  globalScore Int
+  verdict     String
+  verdictLabel String
+  riskLevel   String
+  engine      String
+
+  // Blocs serialises en JSON (SQLite ne gere pas les tableaux natifs)
+  scoresJson          String
+  swotJson            String
+  recommendationsJson String
+  metaJson            String
+
+  createdAt DateTime @default(now())
+
+  /// Analyses financieres previsionnelles rattachees (0..N)
+  financialChecks FinancialCheck[]
+
+  @@index([createdAt])
+}
+
+/// Analyse financiere previsionnelle (module "Financial Check").
+/// Rattachable a une analyse de viabilite existante (analysisId optionnel).
+/// Les calculs sont 100 % deterministes : hypotheses + resultats sont figes ici.
+model FinancialCheck {
+  id         String    @id @default(cuid())
+  analysisId String?
+  analysis   Analysis? @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  currency String @default("MAD")
+
+  // --- Hypotheses saisies (source de verite) ---
+  initialInvestment   Float
+  unitPrice           Float
+  monthlyUnits        Float
+  fixedCostsMonthly   Float
+  variableCostPerUnit Float
+
+  // --- Indicateur de sante financiere (deterministe) ---
+  healthStatus String
+  healthScore  Int
+
+  // --- Resultats figes au moment de l'enregistrement (scenario realiste) ---
+  monthlyResult          Float
+  annualResult           Float
+  contributionMarginRate Float
+  breakEvenRevenue       Float?
+  breakEvenUnits         Float?
+  roiAnnual              Float?
+  paybackMonths          Float?
+
+  // --- Detail complet (transparence + reproductibilite) ---
+  assumptionsJson String
+  computedJson    String
+  scenariosJson   String
+  metaJson        String
+
+  createdAt DateTime @default(now())
+
+  @@index([analysisId])
+  @@index([createdAt])
+}

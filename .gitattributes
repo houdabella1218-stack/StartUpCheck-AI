@@ -1,0 +1,22 @@
+# Normalisation des fins de ligne : LF dans le depot, adaptation automatique
+# a la sortie selon le systeme (CRLF sous Windows).
+* text=auto
+
+# Scripts Windows : CRLF garanti (evite tout probleme d'execution)
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Fichiers binaires : jamais normalises
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.db binary
+*.sqlite binary
