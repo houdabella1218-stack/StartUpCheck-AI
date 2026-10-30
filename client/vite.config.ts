@@ -13,6 +13,10 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
     open: true,
+    // Écoute sur toutes les interfaces IPv4 (0.0.0.0).
+    // Sans cela, Node résout « localhost » en ::1 en priorité et Vite n'écoute
+    // qu'en IPv6 : les navigateurs qui se connectent à 127.0.0.1 échouent.
+    host: true,
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
