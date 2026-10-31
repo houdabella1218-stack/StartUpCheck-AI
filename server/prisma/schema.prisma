@@ -40,6 +40,9 @@ model Analysis {
   /// Analyses financieres previsionnelles rattachees (0..N)
   financialChecks FinancialCheck[]
 
+  /// Etudes de projet structurees rattachees (0..N versions)
+  projectStudies ProjectStudy[]
+
   @@index([createdAt])
 }
 
@@ -81,6 +84,46 @@ model FinancialCheck {
 
   createdAt DateTime @default(now())
 
+  @@index([analysisId])
+  @@index([createdAt])
+}
+
+/// Etude de projet structuree (module "Etude de projet").
+/// Plusieurs versions peuvent coexister pour une meme analyse ; une seule
+/// version est marquee "isCurrent". Les calculs sont deterministes et les
+/// textes generes localement ou par LLM (jamais les chiffres).
+model ProjectStudy {
+  id         String   @id @default(cuid())
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  /// Nom du projet au moment de la generation (historique lisible)
+  projectName String
+
+  /// Numero de version, incremente a chaque regeneration (1, 2, 3...)
+  version   Int
+  /// Version active affichee par defaut
+  isCurrent Boolean @default(true)
+
+  /// Statut de faisabilite : viable | viable_sous_conditions | a_retravailler
+  feasibilityStatus String
+  feasibilityScore  Int
+  completenessScore Int
+
+  /// Moteur ayant produit l'etude : local | llm
+  engine             String
+  methodologyVersion String
+
+  /// Sections, risques, feuille de route et metadonnees (JSON serialise)
+  sectionsJson String
+  risksJson    String
+  roadmapJson  String
+  metaJson     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([analysisId, version])
   @@index([analysisId])
   @@index([createdAt])
 }

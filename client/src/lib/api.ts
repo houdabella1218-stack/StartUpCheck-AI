@@ -11,6 +11,10 @@ import type {
   FinancialCheckRecord,
   FinancialInput,
   MetaResponse,
+  StudyCore,
+  StudyEdit,
+  StudyRecord,
+  StudySummary,
 } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
@@ -120,6 +124,61 @@ export const api = {
 
   deleteAnalysis(id: string): Promise<void> {
     return request<void>(`/analyses/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+
+  // --- Module "Étude de projet" -------------------------------------------
+
+  /** Génère l'étude sans la persister (aperçu). */
+  previewProjectStudy(analysisId: string): Promise<StudyCore> {
+    return request<StudyCore>('/project-studies/preview', {
+      method: 'POST',
+      body: JSON.stringify({ analysisId }),
+    });
+  },
+
+  /** Génère et enregistre une nouvelle version (v1, v2, ...). */
+  createProjectStudy(analysisId: string): Promise<StudyRecord> {
+    return request<StudyRecord>('/project-studies', {
+      method: 'POST',
+      body: JSON.stringify({ analysisId }),
+    });
+  },
+
+  listProjectStudies(
+    analysisId?: string,
+  ): Promise<{ items: StudySummary[]; total: number }> {
+    const query = analysisId ? `?analysisId=${encodeURIComponent(analysisId)}` : '';
+    return request<{ items: StudySummary[]; total: number }>(`/project-studies${query}`);
+  },
+
+  /** Version active pour une analyse (404 si aucune étude). */
+  getCurrentProjectStudy(analysisId: string): Promise<StudyRecord> {
+    return request<StudyRecord>(
+      `/project-studies/current?analysisId=${encodeURIComponent(analysisId)}`,
+    );
+  },
+
+  getProjectStudy(id: string): Promise<StudyRecord> {
+    return request<StudyRecord>(`/project-studies/${encodeURIComponent(id)}`);
+  },
+
+  /** Modifie uniquement des blocs de texte (jamais les scores ni les chiffres). */
+  updateProjectStudy(id: string, edits: StudyEdit[]): Promise<StudyRecord> {
+    return request<StudyRecord>(`/project-studies/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ edits }),
+    });
+  },
+
+  /** Crée la version suivante à partir de l'analyse actuelle. */
+  regenerateProjectStudy(id: string): Promise<StudyRecord> {
+    return request<StudyRecord>(`/project-studies/${encodeURIComponent(id)}/regenerate`, {
+      method: 'POST',
+    });
+  },
+
+  deleteProjectStudy(id: string): Promise<void> {
+    return request<void>(`/project-studies/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
   health(): Promise<{

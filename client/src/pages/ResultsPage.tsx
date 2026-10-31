@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Calendar,
+  FileText,
   Layers,
   LineChart,
   ListChecks,
@@ -41,7 +42,17 @@ const FinancialPanel = lazy(() =>
   })),
 );
 
-type ResultsTab = 'analyse' | 'finance';
+/**
+ * Le module "Étude de projet" est chargé à la demande : l'onglet "Analyse"
+ * reste aussi léger qu'avant.
+ */
+const StudyPanel = lazy(() =>
+  import('@/components/study/StudyPanel').then((module) => ({
+    default: module.StudyPanel,
+  })),
+);
+
+type ResultsTab = 'analyse' | 'finance' | 'etude';
 
 export function ResultsPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,11 +76,17 @@ export function ResultsPage() {
     });
   };
 
+  /** Depuis l'étude de projet, ouvre le module Finance existant. */
+  const handleOpenFinanceTab = () => setTab('finance');
+
   /** Navigation clavier entre onglets (flèches gauche / droite). */
   const handleTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
     event.preventDefault();
-    const next: ResultsTab = tab === 'analyse' ? 'finance' : 'analyse';
+    const order: ResultsTab[] = ['analyse', 'finance', 'etude'];
+    const index = order.indexOf(tab);
+    const delta = event.key === 'ArrowRight' ? 1 : -1;
+    const next = order[(index + delta + order.length) % order.length];
     setTab(next);
     // Déplace le focus sur l'onglet activé après le rendu
     // (`setTimeout` plutôt que `requestAnimationFrame`, qui est suspendu
@@ -193,10 +210,19 @@ export function ResultsPage() {
             label="Finance"
             highlight={Boolean(analysis.financial)}
           />
+          <TabButton
+            id="tab-etude"
+            controls="panel-etude"
+            active={tab === 'etude'}
+            onClick={() => setTab('etude')}
+            icon={<FileText className="h-4 w-4" />}
+            label="Étude de projet"
+          />
         </div>
         <p className="text-[11px] leading-snug text-slate-400">
-          L&apos;impression / l&apos;export PDF imprime la section affichée. L&apos;export JSON
-          contient toujours l&apos;analyse de viabilité et les chiffres financiers.
+          L&apos;impression / l&apos;export PDF imprime la section affichée. Dans l&apos;onglet
+          Étude de projet, l&apos;impression restitue les 9 sections. L&apos;export JSON contient
+          toujours l&apos;analyse de viabilité et les chiffres financiers.
         </p>
       </div>
 
@@ -349,7 +375,7 @@ export function ResultsPage() {
           </Link>
         </div>
         </div>
-      ) : (
+      ) : tab === 'finance' ? (
         <div id="panel-finance" role="tabpanel" aria-labelledby="tab-finance">
           <Suspense
             fallback={
@@ -364,6 +390,24 @@ export function ResultsPage() {
               key={analysis.id}
               analysis={analysis}
               onSaved={handleFinancialSaved}
+            />
+          </Suspense>
+        </div>
+      ) : (
+        <div id="panel-etude" role="tabpanel" aria-labelledby="tab-etude">
+          <Suspense
+            fallback={
+              <div className="flex flex-col items-center gap-3 py-16 text-slate-500">
+                <Loader2 className="h-6 w-6 animate-spin text-brand-600" />
+                <p className="text-sm font-semibold">Chargement de l’étude de projet…</p>
+              </div>
+            }
+          >
+            {/* `key` : garantit la réinitialisation du panneau si l'analyse change */}
+            <StudyPanel
+              key={analysis.id}
+              analysis={analysis}
+              onOpenFinanceTab={handleOpenFinanceTab}
             />
           </Suspense>
         </div>

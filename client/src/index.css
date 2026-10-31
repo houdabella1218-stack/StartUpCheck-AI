@@ -100,6 +100,11 @@
 }
 
 /* Impression : rapport propre */
+@page {
+  size: A4;
+  margin: 14mm 12mm;
+}
+
 @media print {
   .no-print {
     display: none !important;
@@ -113,5 +118,17 @@
   .card {
     box-shadow: none;
     break-inside: avoid;
+  }
+  /* Une section de l'étude commence sur une nouvelle page. */
+  .study-print-section + .study-print-section {
+    break-before: page;
+  }
+  .study-print-section table,
+  .study-print-section tr,
+  .study-print-section li {
+    break-inside: avoid;
+  }
+  a[href]::after {
+    content: '';
   }
 }

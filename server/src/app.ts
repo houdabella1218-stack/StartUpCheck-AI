@@ -4,6 +4,7 @@ import { analysesRouter } from './routes/analyses';
 import { financialRouter } from './routes/financial';
 import { healthRouter } from './routes/health';
 import { metaRouter } from './routes/meta';
+import { projectStudiesRouter } from './routes/projectStudies';
 
 export function createApp() {
   const app = express();
@@ -41,6 +42,14 @@ export function createApp() {
         financialList: 'GET /api/financial-checks?analysisId=...',
         financialDetail: 'GET /api/financial-checks/:id',
         financialRemove: 'DELETE /api/financial-checks/:id',
+        studyPreview: 'POST /api/project-studies/preview',
+        studyCreate: 'POST /api/project-studies',
+        studyList: 'GET /api/project-studies?analysisId=...',
+        studyCurrent: 'GET /api/project-studies/current?analysisId=...',
+        studyDetail: 'GET /api/project-studies/:id',
+        studyEdit: 'PATCH /api/project-studies/:id',
+        studyRegenerate: 'POST /api/project-studies/:id/regenerate',
+        studyRemove: 'DELETE /api/project-studies/:id',
       },
     });
   });
@@ -49,6 +58,7 @@ export function createApp() {
   app.use('/api/meta', metaRouter);
   app.use('/api/analyses', analysesRouter);
   app.use('/api/financial-checks', financialRouter);
+  app.use('/api/project-studies', projectStudiesRouter);
 
   // 404 JSON
   app.use((req: Request, res: Response) => {

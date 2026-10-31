@@ -110,3 +110,53 @@ export const financialListQuerySchema = z
     limit: z.coerce.number().int().min(1).max(100).optional().default(30),
   })
   .strict();
+
+/* -------------------------------------------------------------------------- */
+/* Module "Étude de projet"                                                   */
+/* -------------------------------------------------------------------------- */
+
+/** Generation ou previsualisation d'une etude pour une analyse existante. */
+export const projectStudyCreateSchema = z
+  .object({
+    analysisId: z.string().trim().min(1, "L'identifiant d'analyse est invalide."),
+  })
+  .strict();
+
+export type ProjectStudyCreateDto = z.infer<typeof projectStudyCreateSchema>;
+
+/**
+ * Filtres de liste. `.strict()` : un parametre errone renvoie 400 au lieu de
+ * retourner silencieusement toutes les etudes.
+ */
+export const projectStudyListQuerySchema = z
+  .object({
+    analysisId: z.string().trim().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional().default(30),
+  })
+  .strict();
+
+/**
+ * Modification manuelle : uniquement des blocs de texte, identifies par leur
+ * chemin. Les scores et les chiffres ne sont pas modifiables par cette route.
+ */
+export const projectStudyEditSchema = z
+  .object({
+    edits: z
+      .array(
+        z
+          .object({
+            path: z.string().trim().min(1, 'Le chemin du texte est requis.').max(200),
+            text: z
+              .string()
+              .trim()
+              .min(1, 'Le texte ne peut pas être vide.')
+              .max(4000, 'Le texte ne doit pas dépasser 4000 caractères.'),
+          })
+          .strict(),
+      )
+      .min(1, 'Aucune modification fournie.')
+      .max(200, 'Trop de modifications en une seule fois.'),
+  })
+  .strict();
+
+export type ProjectStudyEditDto = z.infer<typeof projectStudyEditSchema>;

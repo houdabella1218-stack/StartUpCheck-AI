@@ -3,7 +3,7 @@
  * vers les objets typés renvoyés par l'API.
  */
 
-import type { Analysis, FinancialCheck } from '@prisma/client';
+import type { Analysis, FinancialCheck, ProjectStudy } from '@prisma/client';
 import type {
   AnalysisRecord,
   AnalysisSummary,
@@ -22,6 +22,17 @@ import type {
   FinancialScenario,
 } from '../engine/financial/types';
 import { HEALTH_STATUS_LABELS, SCENARIO_COEFFICIENTS } from '../engine/financial';
+import { STUDY_STATUS_LABELS } from '../engine/project-study';
+import type {
+  ProjectStudyRecord,
+  ProjectStudySummary,
+  RoadmapStep,
+  StudyEngineKind,
+  StudyMeta,
+  StudyRisk,
+  StudySection,
+  StudyStatus,
+} from '../engine/project-study/types';
 
 /** Ligne Analysis enrichie de ses analyses financieres (include Prisma). */
 export type AnalysisWithFinancial = Analysis & { financialChecks?: FinancialCheck[] };
@@ -191,4 +202,73 @@ export function labelForRisk(risk: string): string {
     default:
       return 'Non évalué';
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Module "Étude de projet"                                                   */
+/* -------------------------------------------------------------------------- */
+
+function fallbackStudyMeta(row: ProjectStudy): StudyMeta {
+  return {
+    engine: row.engine as StudyEngineKind,
+    engineLabel:
+      row.engine === 'llm'
+        ? 'Moteur local + reformulation IA'
+        : 'Moteur local déterministe',
+    engineNotice: '',
+    llmProvider: null,
+    llmModel: null,
+    generatedAt: row.createdAt.toISOString(),
+    methodologyVersion: row.methodologyVersion,
+    lastEditedAt: null,
+    warnings: [],
+    feasibility: {
+      score: row.feasibilityScore,
+      formula: '',
+      components: [],
+    },
+    completenessScore: row.completenessScore,
+    dataSources: { saisie: 0, calcule: 0, hypothese: 0, ia: 0 },
+  };
+}
+
+export function toProjectStudyRecord(row: ProjectStudy): ProjectStudyRecord {
+  const status = row.feasibilityStatus as StudyStatus;
+
+  return {
+    id: row.id,
+    analysisId: row.analysisId,
+    version: row.version,
+    isCurrent: row.isCurrent,
+    projectName: row.projectName,
+    feasibilityStatus: status,
+    feasibilityStatusLabel: STUDY_STATUS_LABELS[status] ?? row.feasibilityStatus,
+    feasibilityScore: row.feasibilityScore,
+    completenessScore: row.completenessScore,
+    sections: parseJson<StudySection[]>(row.sectionsJson, []),
+    risks: parseJson<StudyRisk[]>(row.risksJson, []),
+    roadmap: parseJson<RoadmapStep[]>(row.roadmapJson, []),
+    meta: parseJson<StudyMeta>(row.metaJson, fallbackStudyMeta(row)),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function toProjectStudySummary(row: ProjectStudy): ProjectStudySummary {
+  const status = row.feasibilityStatus as StudyStatus;
+
+  return {
+    id: row.id,
+    analysisId: row.analysisId,
+    projectName: row.projectName,
+    version: row.version,
+    isCurrent: row.isCurrent,
+    feasibilityStatus: status,
+    feasibilityStatusLabel: STUDY_STATUS_LABELS[status] ?? row.feasibilityStatus,
+    feasibilityScore: row.feasibilityScore,
+    completenessScore: row.completenessScore,
+    engine: row.engine as StudyEngineKind,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
 }

@@ -244,3 +244,262 @@ export type FinancialCheckRecord = FinancialCheck & {
 export type CreateAnalysisPayload = AnalysisInput & {
   financial?: FinancialInput;
 };
+
+/* -------------------------------------------------------------------------- */
+/* Module "Étude de projet"                                                   */
+/* -------------------------------------------------------------------------- */
+
+export type StudySource = 'saisie' | 'calcule' | 'hypothese' | 'ia';
+
+export type StudyText = {
+  text: string;
+  source: StudySource;
+  note?: string;
+};
+
+export type StudySectionKey =
+  | 'presentation'
+  | 'marche'
+  | 'commercial'
+  | 'technique'
+  | 'organisation'
+  | 'finance'
+  | 'risques'
+  | 'plan_action'
+  | 'conclusion';
+
+export type PresentationSection = {
+  key: 'presentation';
+  title: string;
+  projectName: StudyText;
+  summary: StudyText;
+  problem: StudyText;
+  solution: StudyText;
+  targetClients: StudyText;
+  sector: StudyText;
+  market: StudyText;
+  objectives: StudyText[];
+};
+
+export type MarketSection = {
+  key: 'marche';
+  title: string;
+  overview: StudyText;
+  demand: StudyText;
+  targetSegments: StudyText[];
+  trends: StudyText[];
+  competition: StudyText;
+  opportunities: StudyText[];
+  threats: StudyText[];
+  notice: StudyText;
+};
+
+export type CommercialSection = {
+  key: 'commercial';
+  title: string;
+  valueProposition: StudyText;
+  offer: StudyText;
+  pricing: StudyText;
+  channels: StudyText[];
+  communication: StudyText;
+  acquisition: StudyText;
+  retention: StudyText;
+};
+
+export type TechnicalSection = {
+  key: 'technique';
+  title: string;
+  solution: StudyText;
+  technologies: StudyText[];
+  equipment: StudyText[];
+  premises: StudyText;
+  suppliers: StudyText[];
+  process: StudyText[];
+  constraints: StudyText[];
+  scalability: StudyText;
+};
+
+export type StudyRole = {
+  role: string;
+  mission: string;
+  priority: Priority;
+  source: StudySource;
+};
+
+export type OrganizationSection = {
+  key: 'organisation';
+  title: string;
+  team: StudyText;
+  roles: StudyRole[];
+  skills: StudyText[];
+  partners: StudyText[];
+  management: StudyText;
+  legal: StudyText;
+};
+
+export type FinanceSection = {
+  key: 'finance';
+  title: string;
+  available: boolean;
+  financialCheckId: string | null;
+  capturedAt: string | null;
+  currency: string;
+  summary: StudyText;
+  input: FinancialInput | null;
+  computed: FinancialComputed | null;
+  health: FinancialHealth | null;
+  scenarios: FinancialScenario[];
+  warnings: string[];
+  missingNotice: StudyText | null;
+};
+
+export type RisksSection = {
+  key: 'risques';
+  title: string;
+  intro: StudyText;
+};
+
+export type ActionPlanSection = {
+  key: 'plan_action';
+  title: string;
+  intro: StudyText;
+};
+
+export type StudyStatus = 'viable' | 'viable_sous_conditions' | 'a_retravailler';
+
+export type ConclusionSection = {
+  key: 'conclusion';
+  title: string;
+  status: StudyStatus;
+  statusLabel: string;
+  score: number;
+  summary: StudyText;
+  strengths: StudyText[];
+  weaknesses: StudyText[];
+  successConditions: StudyText[];
+  recommendation: StudyText;
+};
+
+export type StudySection =
+  | PresentationSection
+  | MarketSection
+  | CommercialSection
+  | TechnicalSection
+  | OrganizationSection
+  | FinanceSection
+  | RisksSection
+  | ActionPlanSection
+  | ConclusionSection;
+
+export type RiskCategory =
+  | 'financier'
+  | 'commercial'
+  | 'operationnel'
+  | 'technique'
+  | 'juridique'
+  | 'rh';
+
+export type RiskLevelLabel = 'faible' | 'modere' | 'eleve' | 'critique';
+export type RiskScale = 1 | 2 | 3 | 4;
+
+export type StudyRisk = {
+  id: string;
+  category: RiskCategory;
+  categoryLabel: string;
+  title: string;
+  description: StudyText;
+  probability: RiskScale;
+  impact: RiskScale;
+  score: number;
+  level: RiskLevelLabel;
+  levelLabel: string;
+  mitigation: StudyText;
+};
+
+export type RoadmapHorizonKey = 'j0_30' | 'j30_60' | 'j60_90' | 'm3_6' | 'm6_12';
+
+export type RoadmapAction = {
+  text: StudyText;
+  priority: Priority;
+};
+
+export type RoadmapStep = {
+  key: RoadmapHorizonKey;
+  label: string;
+  period: string;
+  objectives: StudyText[];
+  actions: RoadmapAction[];
+  indicators: StudyText[];
+};
+
+export type FeasibilityComponentKey = 'viability' | 'finance' | 'completeness';
+
+export type FeasibilityComponent = {
+  key: FeasibilityComponentKey;
+  label: string;
+  value: number;
+  weight: number;
+  available: boolean;
+};
+
+export type StudyEngineKind = 'local' | 'llm';
+
+export type StudyMeta = {
+  engine: StudyEngineKind;
+  engineLabel: string;
+  engineNotice: string;
+  llmProvider: string | null;
+  llmModel: string | null;
+  generatedAt: string;
+  methodologyVersion: string;
+  lastEditedAt: string | null;
+  warnings: string[];
+  feasibility: {
+    score: number;
+    formula: string;
+    components: FeasibilityComponent[];
+  };
+  completenessScore: number;
+  dataSources: Record<StudySource, number>;
+};
+
+export type StudyCore = {
+  analysisId: string;
+  projectName: string;
+  feasibilityStatus: StudyStatus;
+  feasibilityStatusLabel: string;
+  feasibilityScore: number;
+  completenessScore: number;
+  sections: StudySection[];
+  risks: StudyRisk[];
+  roadmap: RoadmapStep[];
+  meta: StudyMeta;
+};
+
+export type StudyRecord = StudyCore & {
+  id: string;
+  version: number;
+  isCurrent: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StudySummary = {
+  id: string;
+  analysisId: string;
+  projectName: string;
+  version: number;
+  isCurrent: boolean;
+  feasibilityStatus: StudyStatus;
+  feasibilityStatusLabel: string;
+  feasibilityScore: number;
+  completenessScore: number;
+  engine: StudyEngineKind;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StudyEdit = {
+  path: string;
+  text: string;
+};

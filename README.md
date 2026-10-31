@@ -21,6 +21,7 @@ priorisées et verdict final.
 | **Niveau de risque** | Note de risque, niveau (faible → très élevé) et principaux facteurs |
 | **Verdict** | À développer · À améliorer · Risqué |
 | **Onglet Finance** | Analyse financière prévisionnelle : CA, marge, seuil de rentabilité, ROI, payback, 3 scénarios, simulateur |
+| **Onglet Étude de projet** | Business plan structuré en 9 sections, analyse des risques, feuille de route 12 mois, score de faisabilité, export PDF |
 | **Historique** | Toutes les analyses conservées en base locale, consultables par URL |
 
 Fonctions annexes : export JSON du rapport, impression / PDF, idées d'exemple
@@ -93,7 +94,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 | `npm run dev` | Lance le serveur (4000) et le client (5173) ensemble |
 | `npm run dev:server` | Lance uniquement l'API |
 | `npm run dev:client` | Lance uniquement l'interface |
-| `npm test` | Exécute les tests du moteur d'analyse **et du module financier** |
+| `npm test` | Exécute les tests du moteur d'analyse, du module financier et de l'étude de projet |
 | `npm run typecheck` | Vérifie les types TypeScript (serveur + client) |
 | `npm run seed` | Ajoute des analyses d'exemple en base |
 | `npm run db:studio` | Ouvre l'explorateur de base Prisma Studio |
@@ -101,7 +102,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 ---
 
-## 5. Démonstration en 7 étapes
+## 5. Démonstration en 8 étapes
 
 1. Ouvrir <http://localhost:5173>.
 2. Cliquer sur **« Analyser mon idée »**.
@@ -114,7 +115,10 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 6. Ouvrir l'onglet **« Finance »** : KPI, santé financière, seuil de rentabilité,
    ROI, payback, graphiques, comparaison des 3 scénarios. Déplacer un curseur du
    **simulateur** pour montrer le recalcul immédiat, puis **enregistrer**.
-7. Aller dans **Historique** pour rouvrir une analyse, puis **Méthodologie**
+7. Ouvrir l'onglet **« Étude de projet »** : générer l'étude, parcourir les 9
+   sections, montrer le score de faisabilité, la matrice des risques, la feuille
+   de route et la conclusion. Modifier un texte puis **régénérer** une version.
+8. Aller dans **Historique** pour rouvrir une analyse, puis **Méthodologie**
    pour présenter la formule et les limites de l'outil.
 
 ---
@@ -270,7 +274,123 @@ les hypothèses **et** les résultats en base, rattachés à l'analyse.
 
 ---
 
-## 8. Enrichissement par IA générative (optionnel)
+## 8. Module « Étude de projet »
+
+Onglet **Étude de projet** du dashboard. Il transforme l'analyse existante en
+**business plan structuré**, sans jamais demander de ressaisir les données :
+scores, SWOT, description, secteur, marché, cible et Financial Check sont
+réutilisés automatiquement.
+
+### 8.1 Les 9 sections
+
+| # | Section | Contenu |
+|---|---|---|
+| 1 | **Présentation** | Projet, résumé exécutif, problème, solution, cible, secteur, marché, objectifs |
+| 2 | **Étude de marché** | Vue d'ensemble, demande, segments, tendances, concurrence, opportunités, menaces |
+| 3 | **Étude commerciale** | Proposition de valeur, offre, tarification, canaux, communication, acquisition, fidélisation |
+| 4 | **Étude technique** | Solution, technologies, équipements, locaux, fournisseurs, processus, contraintes, scalabilité |
+| 5 | **Étude organisationnelle** | Équipe, rôles, compétences, partenaires, management, cadre juridique |
+| 6 | **Étude financière** | **Copie figée** du Financial Check existant (aucun recalcul) |
+| 7 | **Analyse des risques** | 6 catégories, probabilité × impact, niveau, plan de mitigation |
+| 8 | **Plan d'action** | Feuille de route 0–30 j, 30–60 j, 60–90 j, 3–6 mois, 6–12 mois |
+| 9 | **Conclusion** | Niveau global de faisabilité, forces, faiblesses, conditions de réussite, recommandation |
+
+### 8.2 Score de faisabilité
+
+```
+score = round( Σ(valeur × poids) / Σ(poids disponibles) )     borné entre 0 et 100
+```
+
+| Composante | Poids | Source |
+|---|---|---|
+| Viabilité du projet | 50 % | Score global de l'analyse existante |
+| Santé financière | 30 % | Financial Check (score de santé) |
+| Complétude du dossier | 20 % | `70 % × confiance de l'analyse + 30 % × présence d'un Financial Check` |
+
+Sans Financial Check, la composante Finance est **omise** et les poids restants
+sont **renormalisés** (50 % + 20 % = 70 %). La formule exacte, avec les valeurs
+utilisées, est affichée dans l'en-tête de l'étude.
+
+Statuts : **Projet viable** (score ≥ 70 et verdict « À développer »),
+**Viable sous conditions** (score ≥ 45), **À retravailler** (score < 45).
+
+Plafonnements de sécurité :
+
+- marge unitaire ≤ 0 dans le Financial Check → **À retravailler** ;
+- santé financière « Non rentable » → au mieux **Viable sous conditions** ;
+- verdict de l'analyse « Risqué » → au mieux **Viable sous conditions**.
+
+### 8.3 Analyse des risques
+
+Six risques sont construits par règles : **financier, commercial, opérationnel,
+technique, juridique, RH**. Chaque risque reçoit une probabilité et un impact
+de 1 à 4 (hypothèses déterministes, jamais des mesures statistiques).
+
+```
+niveau = probabilité × impact        (1 à 16)
+```
+
+| Niveau | Plage |
+|---|---|
+| Faible | 1 – 4 |
+| Modéré | 5 – 8 |
+| Élevé | 9 – 12 |
+| Critique | 13 – 16 |
+
+### 8.4 Feuille de route
+
+Cinq horizons (0–30 j, 30–60 j, 60–90 j, 3–6 mois, 6–12 mois), chacun avec
+objectifs, actions priorisées et indicateurs de réussite. Ce sont des **repères
+de travail**, pas des engagements contractuels.
+
+### 8.5 Transparence des contenus
+
+Chaque bloc de texte porte son origine, affichée dans l'interface :
+
+| Badge | Signification |
+|---|---|
+| **Saisie** | Information fournie par l'utilisateur |
+| **Calculé** | Résultat déterministe (score, marge, seuil, faisabilité) |
+| **Hypothèse** | Déduction heuristique du moteur, jamais une donnée réelle |
+| **IA** | Texte reformulé par un modèle de langage, non vérifié |
+
+Le bandeau « Origine des contenus » compte les blocs par source. Les scores,
+les risques et les chiffres financiers **ne passent jamais par le LLM**.
+
+### 8.6 Versions et modification
+
+- Chaque génération crée une **version** (`v1`, `v2`, …) ; une seule est active.
+- L'historique des versions reste accessible et permet de revenir à une version
+  antérieure.
+- Le mode **Modifier** ne touche que les textes : les scores, risques et chiffres
+  restent verrouillés. Un texte modifié est requalifié en **Saisie**.
+- **Régénérer** crée une nouvelle version à partir de l'analyse et du Financial
+  Check courants ; les versions précédentes sont conservées.
+
+### 8.7 Export PDF
+
+Le bouton **Exporter en PDF** utilise l'impression native du navigateur
+(`window.print()`). Le rendu imprime les **9 sections complètes**, avec en-tête
+et pied de page (date, moteur, méthodologie, avertissement), une section par
+page, sans navigation ni boutons. L'export JSON reste celui de l'analyse.
+
+### 8.8 Enrichissement par IA (optionnel)
+
+Si un LLM est configuré, **un seul appel JSON structuré** reformule certains
+textes (résumé, marché, commercial, organisation, mitigations, conclusion).
+Garde-fous :
+
+- le modèle ne reçoit que des textes déjà rédigés, jamais les scores ;
+- il ne peut renvoyer que les identifiants fournis (liste blanche) ;
+- tout **montant**, **pourcentage** ou **unité monétaire** nouveau fait rejeter
+  la réponse entière ;
+- un nombre absent du texte source fait rejeter le champ concerné ;
+- en cas d'erreur, de délai ou de réponse incomplète, l'étude locale est
+  conservée **silencieusement**.
+
+---
+
+## 9. Enrichissement par IA générative (optionnel)
 
 **Aucune clé n'est nécessaire pour utiliser l'application.** Si aucune clé
 n'est présente, ou si l'appel échoue (réseau, délai, réponse invalide),
@@ -300,7 +420,7 @@ Groq, Together, Ollama…). Il suffit de changer `LLM_BASE_URL` et `LLM_MODEL`.
 
 ---
 
-## 9. API REST
+## 10. API REST
 
 | Méthode | Route | Description |
 |---|---|---|
@@ -315,6 +435,14 @@ Groq, Together, Ollama…). Il suffit de changer `LLM_BASE_URL` et `LLM_MODEL`.
 | `GET` | `/api/financial-checks?analysisId=…` | Liste les analyses financières |
 | `GET` | `/api/financial-checks/:id` | Détail d'une analyse financière |
 | `DELETE` | `/api/financial-checks/:id` | Supprime une analyse financière |
+| `POST` | `/api/project-studies/preview` | Génère une étude de projet **sans** la persister |
+| `POST` | `/api/project-studies` | Génère et enregistre une nouvelle version |
+| `GET` | `/api/project-studies?analysisId=…` | Liste les versions d'une étude |
+| `GET` | `/api/project-studies/current?analysisId=…` | Version active d'une analyse |
+| `GET` | `/api/project-studies/:id` | Détail d'une version |
+| `PATCH` | `/api/project-studies/:id` | Modifie uniquement des blocs de texte |
+| `POST` | `/api/project-studies/:id/regenerate` | Crée une nouvelle version |
+| `DELETE` | `/api/project-studies/:id` | Supprime une version |
 
 `POST /api/analyses` accepte un bloc `financial` **optionnel** pour créer
 l'analyse et son analyse financière en une seule requête.
@@ -337,7 +465,7 @@ curl -X POST http://localhost:4000/api/analyses \
 
 ---
 
-## 10. Structure du projet
+## 11. Structure du projet
 
 ```
 StartupCheckAi/
@@ -347,20 +475,21 @@ StartupCheckAi/
 │  ├─ src/lib/                  API, formatage, finance (formats/thème), utilitaires
 │  └─ src/store/                État global (Zustand)
 ├─ server/                      API Express + moteur d'analyse
-│  ├─ prisma/schema.prisma      Schéma SQLite (Analysis + FinancialCheck)
+│  ├─ prisma/schema.prisma      Schéma SQLite (Analysis + FinancialCheck + ProjectStudy)
 │  ├─ src/engine/               Moteur de scoring déterministe + fallback
 │  ├─ src/engine/financial/     Moteur financier déterministe (formules, scénarios, santé)
-│  ├─ src/services/             LLM optionnel, services analyse + finance
+│  ├─ src/engine/project-study/ Moteur « Étude de projet » (9 sections, risques, feuille de route)
+│  ├─ src/services/             LLM optionnel, services analyse + finance + étude
 │  ├─ src/routes/               Routes REST
 │  ├─ src/data/                 Idées d'exemple
-│  └─ tests/                    Tests du moteur + tests financiers
+│  └─ tests/                    Tests moteur + finance + étude de projet
 ├─ demarrer.cmd                 Lancement en un clic (Windows)
 └─ README.md
 ```
 
 ---
 
-## 11. Limites assumées
+## 12. Limites assumées
 
 - Les barèmes sectoriels sont des **indices heuristiques** construits à partir
   d'ordres de grandeur publics. Ils ne remplacent pas une étude de marché.
@@ -374,5 +503,14 @@ StartupCheckAi/
 - Le délai de récupération suppose un **résultat mensuel constant** dès le premier mois.
 - Les coefficients des scénarios pessimiste et optimiste sont **identiques pour
   tous les projets** : ils mesurent la sensibilité, ils ne prédisent rien.
+- L'**étude de projet** est un document de travail généré par règles : elle
+  réutilise l'analyse existante et ne remplace ni une étude de marché réelle, ni
+  un business plan validé par un professionnel.
+- Les probabilités et impacts des risques sont des **hypothèses déterministes**
+  (échelle 1 à 4), pas des mesures statistiques.
+- La section Finance est une **copie figée** du Financial Check au moment de la
+  génération : régénérez l'étude après toute mise à jour des hypothèses.
+- Les textes marqués **IA** sont reformulés par un modèle de langage et ne sont
+  **pas vérifiés** ; aucun chiffre, montant ou pourcentage nouveau n'est accepté.
 - Aucune donnée ne quitte votre machine : tout est stocké dans une base SQLite
   locale (`server/prisma/dev.db`).
